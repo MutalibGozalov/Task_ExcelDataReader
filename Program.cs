@@ -1,34 +1,48 @@
-﻿using ExcelDataReader;
-using System.Data;
-using System.Text;
+﻿using System.Data;
+using System.Data.OleDb;
+using Spectre.Console;
 
+namespace ExcellDataReader;
 
-
-internal partial class Program
+public class Program
 {
-    private static void Main(string[] args)
-    {
-        string filePath = @"C:\Users\99450\Desktop\RNET102\Tasks\ExcellDataReader\Laptop comparsion.xlsx";
-        using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
-        {
-            Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            using (var reader = ExcelReaderFactory.CreateReader(stream, new ExcelReaderConfiguration(){ FallbackEncoding = Encoding.GetEncoding("UTF-8")}))
-            {
-                var result = reader.AsDataSet();
-                var table = result.Tables[0]; // Access the first worksheet in the file
-                // Use the DataTable API to access the rows and columns
-                foreach (DataRow row in table.Rows)
-                {
-                    // var id = row["Name"].ToString(); // Access a column by name
-                    var name = row[0].ToString(); // Access a column by index
-                    // var price = Convert.ToDecimal(row["Cost"]); // Convert the value to a decimal
-                    Console.WriteLine(name.PadRight(10, ' ') + " | ");
-                }
+   static void Main(string[] args)
+   {
+      string path = @"C:\Users\99450\Desktop\RNET102\RNET102-Tasks\RNET102\ExcelExample\ExcelExample\example_data.xlsx";
+      OleDbConnection connection = new(connectionString: $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={path};Extended Properties=\"Excel 8.0; HDR = YES\";");
 
-            }
-        }
+      connection.Open();
+
+      string query = "SELECT * FROM [SHEET1$]";
+      OleDbDataAdapter da = new OleDbDataAdapter(query, connection);
 
 
-        //Console.WriteLine("Hello, World!");
-    }
+      DataTable dt = new DataTable();
+
+      da.Fill(dt);
+      connection.Dispose();
+
+      var table = new Table();
+
+      foreach (var item in dt.Columns)
+      {
+         table.AddColumn(item.ToString().Trim());
+      }
+
+      List<string> rows = new List<string>();
+      foreach (DataRow item in dt.Rows)
+      {
+         foreach (var cell in item.ItemArray)
+         {
+            rows.Add(cell.ToString());
+         }
+         table.AddRow(rows.ToArray());
+         rows.Clear();
+      }
+
+      AnsiConsole.Write(table); 
+
+      Console.ReadLine();
+   }
 }
+
